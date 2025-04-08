@@ -27,8 +27,8 @@ A full-stack cloud-based **Workstation Booking System** designed to manage and a
 | **Frontend** | ReactJS (TypeScript), HTML, CSS |
 | **Backend**  | Node.js + Express.js |
 | **Databases**| MongoDB (Bookings), PostgreSQL (Authentication) |
-| **Hosting**  | AWS / Firebase / Render |
-| **Other**    | Nodemailer (emails), Cloudinary (images), Socket.IO (real-time), TailwindCSS |
+| **Hosting**  | AWS / Firebase / Render / Vercel |
+| **Other**    | Nodemailer (emails), Cloudinary (images), WebPacket (real-time), TailwindCSS |
 
 ---
 
