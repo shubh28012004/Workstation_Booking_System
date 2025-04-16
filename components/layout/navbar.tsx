@@ -46,6 +46,7 @@ export default function Navbar() {
     { name: "Home", path: "/" },
     { name: "Dashboard", path: "/dashboard" },
     { name: "Book Seat", path: "/book" },
+    { name: "Rules", path: "/rules" },
   ]
 
   return (
@@ -57,11 +58,14 @@ export default function Navbar() {
               <Image
                 src="/images/symbiosis-logo.png"
                 alt="Symbiosis Institute of Technology"
-                width={40}
-                height={40}
-                className="mr-2"
+                width={60}
+                height={60}
+                className="mr-3"
               />
-              <span className="text-xl font-bold">WorkstationBooking</span>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-red-600">BOOK MY DESK</span>
+                <span className="text-xs text-gray-500">Workstation Booking System</span>
+              </div>
             </Link>
           </div>
 
@@ -105,7 +109,7 @@ export default function Navbar() {
               </div>
             ) : (
               <Link href="/auth">
-                <Button variant="default" size="sm">
+                <Button variant="default" size="sm" className="bg-red-600 hover:bg-red-700">
                   Login
                 </Button>
               </Link>
@@ -186,7 +190,7 @@ export default function Navbar() {
             ) : (
               <div className="px-4">
                 <Link href="/auth" onClick={closeMenu}>
-                  <Button variant="default" size="sm" className="w-full">
+                  <Button variant="default" size="sm" className="w-full bg-red-600 hover:bg-red-700">
                     Login
                   </Button>
                 </Link>

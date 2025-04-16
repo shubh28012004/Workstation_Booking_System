@@ -2,7 +2,9 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+import { Info } from "lucide-react"
 
 interface FloorSelectorProps {
   onFloorSelect: (floor: number) => void
@@ -25,7 +27,7 @@ export default function FloorSelector({ onFloorSelect }: FloorSelectorProps) {
       <CardContent className="grid grid-cols-2 gap-4">
         <Button
           variant={selectedFloor === 4 ? "default" : "outline"}
-          className="h-24 text-lg"
+          className={`h-24 text-lg ${selectedFloor === 4 ? "bg-red-600 hover:bg-red-700" : "border-red-600 text-red-600 hover:bg-red-50"}`}
           onClick={() => handleFloorSelect(4)}
         >
           4th Floor
@@ -34,7 +36,7 @@ export default function FloorSelector({ onFloorSelect }: FloorSelectorProps) {
         </Button>
         <Button
           variant={selectedFloor === 5 ? "default" : "outline"}
-          className="h-24 text-lg"
+          className={`h-24 text-lg ${selectedFloor === 5 ? "bg-red-600 hover:bg-red-700" : "border-red-600 text-red-600 hover:bg-red-50"}`}
           onClick={() => handleFloorSelect(5)}
         >
           5th Floor
@@ -42,6 +44,12 @@ export default function FloorSelector({ onFloorSelect }: FloorSelectorProps) {
           <span className="block text-xs mt-1">48 Seats</span>
         </Button>
       </CardContent>
+      <CardFooter className="flex justify-center">
+        <Link href="/rules" className="flex items-center text-sm text-gray-500 hover:text-red-600">
+          <Info className="h-4 w-4 mr-1" />
+          View booking rules for each floor
+        </Link>
+      </CardFooter>
     </Card>
   )
 }

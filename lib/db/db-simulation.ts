@@ -17,18 +17,20 @@ export async function initializeDatabase() {
       {
         id: uuidv4(),
         name: "Admin User",
-        email: "admin@example.com",
+        email: "admin@sitpune.edu.in",
         password: adminPassword,
         role: "admin",
+        phone: "9876543210",
         created_at: new Date(),
         updated_at: new Date(),
       },
       {
         id: uuidv4(),
         name: "Regular User",
-        email: "user@example.com",
+        email: "user@sitpune.edu.in",
         password: userPassword,
         role: "user",
+        phone: "9876543211",
         created_at: new Date(),
         updated_at: new Date(),
       },
@@ -37,11 +39,14 @@ export async function initializeDatabase() {
 
   // Create seats if empty
   if (seats.length === 0) {
-    // Generate 5th floor seats
+    // Generate 5th floor seats with PC labels
+    let pcCounter = 1
     for (let row = 1; row <= 8; row++) {
       for (let seatNumber = 1; seatNumber <= 6; seatNumber++) {
         const isLastRow = row === 8
         const isLeftSide = seatNumber <= 3
+        const pcLabel = `PC${pcCounter}`
+        pcCounter++
 
         // Last row special reservations
         const isReserved = isLastRow && ((isLeftSide && "Other Departments") || (!isLeftSide && "SCAAI"))
@@ -51,6 +56,7 @@ export async function initializeDatabase() {
           floor: 5,
           row,
           seatNumber,
+          pcLabel,
           isReserved: !!isReserved,
           reservedFor: isReserved || undefined,
         })
@@ -64,6 +70,7 @@ export async function initializeDatabase() {
         floor: 4,
         row: 1,
         seatNumber,
+        pcLabel: `NVIDIA-${seatNumber}`,
         isReserved: false,
       })
     }
@@ -88,6 +95,16 @@ export const userDb = {
     }
     users.push(newUser)
     return newUser
+  },
+
+  getAll: () => {
+    return users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      phone: user.phone,
+    }))
   },
 }
 
@@ -161,4 +178,58 @@ export const bookingDb = {
           (new Date(booking.startTime) >= startTime && new Date(booking.endTime) <= endTime)),
     )
   },
+
+  // Get bookings with user details
+  getBookingsWithUserDetails: () => {
+    return bookings.map((booking) => {
+      const user = users.find((u) => u.id === booking.userId)
+      const seat = seats.find((s) => s.id === booking.seatId)
+
+      return {
+        ...booking,
+        userName: user ? user.name : "Unknown",
+        userEmail: user ? user.email : "Unknown",
+        userPhone: user ? user.phone : "Unknown",
+        pcLabel: seat ? seat.pcLabel : "Unknown",
+      }
+    })
+  },
+
+  // Get active bookings for a seat
+  getActiveBookingForSeat: (seatId: string) => {
+    const now = new Date()
+    return bookings.find(
+      (booking) =>
+        booking.seatId === seatId &&
+        booking.status === "approved" &&
+        new Date(booking.startTime) <= now &&
+        new Date(booking.endTime) >= now,
+    )
+  },
+}
+
+// Helper to get seat with booking info
+export const getSeatWithBookingInfo = (seatId: string) => {
+  const seat = seatDb.findById(seatId)
+  if (!seat) return null
+
+  const activeBooking = bookingDb.getActiveBookingForSeat(seatId)
+  if (!activeBooking) return seat
+
+  const user = users.find((u) => u.id === activeBooking.userId)
+
+  return {
+    ...seat,
+    isBooked: true,
+    booking: {
+      ...activeBooking,
+      userName: user ? user.name : "Unknown",
+      userPhone: user ? user.phone : "Unknown",
+      duration:
+        Math.ceil(
+          (new Date(activeBooking.endTime).getTime() - new Date(activeBooking.startTime).getTime()) /
+            (1000 * 60 * 60 * 24),
+        ) + " days",
+    },
+  }
 }

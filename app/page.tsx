@@ -10,16 +10,16 @@ export default function Home() {
         <Image
           src="/images/symbiosis-logo.png"
           alt="Symbiosis Institute of Technology"
-          width={100}
-          height={100}
+          width={120}
+          height={120}
           className="mb-4"
         />
       </div>
 
       <div className="max-w-3xl text-center mb-12">
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-          <span className="block">College Workstation</span>
-          <span className="block text-red-600">Booking System</span>
+          <span className="block text-red-600">BOOK MY DESK</span>
+          <span className="block text-2xl mt-2">Workstation Booking System</span>
         </h1>
         <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl">
           Book workstations on the 4th and 5th floors easily. View availability in real-time and manage your bookings.

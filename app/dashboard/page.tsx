@@ -7,10 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
+import Link from "next/link"
+import { Calendar, Clock, MapPin } from "lucide-react"
 
 interface Booking {
   id: string
   seatId: string
+  pcLabel: string
   floor: number
   startTime: string
   endTime: string
@@ -21,15 +24,18 @@ export default function DashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
     // Check if user is logged in
     const token = localStorage.getItem("token")
-    setIsLoggedIn(!!token)
+    const storedUser = localStorage.getItem("user")
 
-    if (token) {
+    if (token && storedUser) {
+      setIsLoggedIn(true)
+      setUser(JSON.parse(storedUser))
       fetchBookings()
     } else {
       setLoading(false)
@@ -55,6 +61,7 @@ export default function DashboardPage() {
         {
           id: "1",
           seatId: "5-2-3",
+          pcLabel: "PC9",
           floor: 5,
           startTime: new Date(Date.now() + 86400000).toISOString(), // tomorrow
           endTime: new Date(Date.now() + 172800000).toISOString(), // day after tomorrow
@@ -63,6 +70,7 @@ export default function DashboardPage() {
         {
           id: "2",
           seatId: "4-1-2",
+          pcLabel: "NVIDIA-2",
           floor: 4,
           startTime: new Date(Date.now() + 259200000).toISOString(), // 3 days from now
           endTime: new Date(Date.now() + 604800000).toISOString(), // 7 days from now
@@ -71,6 +79,7 @@ export default function DashboardPage() {
         {
           id: "3",
           seatId: "5-4-1",
+          pcLabel: "PC19",
           floor: 5,
           startTime: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
           endTime: new Date(Date.now() - 86400000).toISOString(), // yesterday
@@ -159,7 +168,9 @@ export default function DashboardPage() {
           <CardDescription>You need to be logged in to view your dashboard</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Button onClick={() => router.push("/auth")}>Go to Login</Button>
+          <Button onClick={() => router.push("/auth")} className="bg-red-600 hover:bg-red-700">
+            Go to Login
+          </Button>
         </CardContent>
       </Card>
     )
@@ -167,9 +178,21 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Your Dashboard</h1>
-        <Button onClick={() => router.push("/book")}>Book a Workstation</Button>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Your Dashboard</h1>
+          <p className="text-gray-500">Welcome back, {user?.name}</p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/rules">
+            <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50">
+              View Rules
+            </Button>
+          </Link>
+          <Button onClick={() => router.push("/book")} className="bg-red-600 hover:bg-red-700">
+            Book a Workstation
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -183,6 +206,7 @@ export default function DashboardPage() {
               <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
               <TabsTrigger value="pending">Pending</TabsTrigger>
               <TabsTrigger value="past">Past</TabsTrigger>
+              <TabsTrigger value="floor">By Floor</TabsTrigger>
             </TabsList>
 
             {loading ? (
@@ -210,17 +234,28 @@ export default function DashboardPage() {
                       .map((booking) => (
                         <Card key={booking.id}>
                           <CardContent className="p-4">
-                            <div className="flex justify-between items-center">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                               <div>
-                                <h3 className="font-medium">
-                                  Floor {booking.floor}, Seat {booking.seatId.split("-")[2]}
+                                <h3 className="font-medium flex items-center">
+                                  <MapPin className="h-4 w-4 mr-1 text-red-600" />
+                                  Floor {booking.floor}, {booking.pcLabel}
                                 </h3>
-                                <p className="text-sm text-gray-500">
-                                  {formatDate(booking.startTime)} - {formatDate(booking.endTime)}
-                                </p>
+                                <div className="flex items-center text-sm text-gray-500 mt-1">
+                                  <Calendar className="h-4 w-4 mr-1" />
+                                  {formatDate(booking.startTime)}
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500 mt-1">
+                                  <Clock className="h-4 w-4 mr-1" />
+                                  {formatDate(booking.endTime)}
+                                </div>
                                 <div className="mt-2">{getStatusBadge(booking.status)}</div>
                               </div>
-                              <Button variant="outline" size="sm" onClick={() => cancelBooking(booking.id)}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => cancelBooking(booking.id)}
+                                className="border-red-200 text-red-600 hover:bg-red-50"
+                              >
                                 Cancel
                               </Button>
                             </div>
@@ -239,17 +274,28 @@ export default function DashboardPage() {
                       .map((booking) => (
                         <Card key={booking.id}>
                           <CardContent className="p-4">
-                            <div className="flex justify-between items-center">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                               <div>
-                                <h3 className="font-medium">
-                                  Floor {booking.floor}, Seat {booking.seatId.split("-")[2]}
+                                <h3 className="font-medium flex items-center">
+                                  <MapPin className="h-4 w-4 mr-1 text-red-600" />
+                                  Floor {booking.floor}, {booking.pcLabel}
                                 </h3>
-                                <p className="text-sm text-gray-500">
-                                  {formatDate(booking.startTime)} - {formatDate(booking.endTime)}
-                                </p>
+                                <div className="flex items-center text-sm text-gray-500 mt-1">
+                                  <Calendar className="h-4 w-4 mr-1" />
+                                  {formatDate(booking.startTime)}
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500 mt-1">
+                                  <Clock className="h-4 w-4 mr-1" />
+                                  {formatDate(booking.endTime)}
+                                </div>
                                 <div className="mt-2">{getStatusBadge(booking.status)}</div>
                               </div>
-                              <Button variant="outline" size="sm" onClick={() => cancelBooking(booking.id)}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => cancelBooking(booking.id)}
+                                className="border-red-200 text-red-600 hover:bg-red-50"
+                              >
                                 Cancel
                               </Button>
                             </div>
@@ -273,14 +319,20 @@ export default function DashboardPage() {
                       .map((booking) => (
                         <Card key={booking.id}>
                           <CardContent className="p-4">
-                            <div className="flex justify-between items-center">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                               <div>
-                                <h3 className="font-medium">
-                                  Floor {booking.floor}, Seat {booking.seatId.split("-")[2]}
+                                <h3 className="font-medium flex items-center">
+                                  <MapPin className="h-4 w-4 mr-1 text-red-600" />
+                                  Floor {booking.floor}, {booking.pcLabel}
                                 </h3>
-                                <p className="text-sm text-gray-500">
-                                  {formatDate(booking.startTime)} - {formatDate(booking.endTime)}
-                                </p>
+                                <div className="flex items-center text-sm text-gray-500 mt-1">
+                                  <Calendar className="h-4 w-4 mr-1" />
+                                  {formatDate(booking.startTime)}
+                                </div>
+                                <div className="flex items-center text-sm text-gray-500 mt-1">
+                                  <Clock className="h-4 w-4 mr-1" />
+                                  {formatDate(booking.endTime)}
+                                </div>
                                 <div className="mt-2">{getStatusBadge(booking.status)}</div>
                               </div>
                             </div>
@@ -290,6 +342,64 @@ export default function DashboardPage() {
                   ) : (
                     <p className="text-center py-8 text-gray-500">You don't have any past bookings</p>
                   )}
+                </TabsContent>
+
+                <TabsContent value="floor" className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">5th Floor Bookings</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {bookings.filter((b) => b.floor === 5).length > 0 ? (
+                          <div className="space-y-2">
+                            {bookings
+                              .filter((b) => b.floor === 5)
+                              .map((booking) => (
+                                <div key={booking.id} className="p-2 border rounded flex justify-between items-center">
+                                  <div>
+                                    <div className="font-medium">{booking.pcLabel}</div>
+                                    <div className="text-xs text-gray-500">
+                                      {formatDate(booking.startTime).split(",")[0]}
+                                    </div>
+                                  </div>
+                                  {getStatusBadge(booking.status)}
+                                </div>
+                              ))}
+                          </div>
+                        ) : (
+                          <p className="text-center py-4 text-gray-500">No 5th floor bookings</p>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">4th Floor Bookings</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {bookings.filter((b) => b.floor === 4).length > 0 ? (
+                          <div className="space-y-2">
+                            {bookings
+                              .filter((b) => b.floor === 4)
+                              .map((booking) => (
+                                <div key={booking.id} className="p-2 border rounded flex justify-between items-center">
+                                  <div>
+                                    <div className="font-medium">{booking.pcLabel}</div>
+                                    <div className="text-xs text-gray-500">
+                                      {formatDate(booking.startTime).split(",")[0]}
+                                    </div>
+                                  </div>
+                                  {getStatusBadge(booking.status)}
+                                </div>
+                              ))}
+                          </div>
+                        ) : (
+                          <p className="text-center py-4 text-gray-500">No 4th floor bookings</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
                 </TabsContent>
               </>
             )}

@@ -8,9 +8,8 @@ import Navbar from "@/components/layout/navbar"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "Workstation Booking System",
+  title: "BOOK MY DESK - Workstation Booking System",
   description: "Book college workstations easily",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -32,12 +31,12 @@ export default function RootLayout({
                 <Image
                   src="/images/symbiosis-logo.png"
                   alt="Symbiosis Institute of Technology"
-                  width={60}
-                  height={60}
+                  width={100}
+                  height={100}
                   className="mb-2"
                 />
                 <p className="text-center text-sm text-gray-500">
-                  &copy; {new Date().getFullYear()} Workstation Booking System
+                  &copy; {new Date().getFullYear()} BOOK MY DESK - Workstation Booking System
                 </p>
                 <p className="text-center text-sm text-gray-500 mt-1">Website created by Team Symbiosis</p>
               </div>
@@ -48,6 +47,3 @@ export default function RootLayout({
     </html>
   )
 }
-
-
-import './globals.css'
