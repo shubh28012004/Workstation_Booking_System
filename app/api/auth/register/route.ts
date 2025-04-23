@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { hashPassword } from "@/lib/auth/auth-utils"
-import { userDb } from "@/lib/db/db-simulation"
+import { mysqlAuth } from "@/lib/db/mysql-simulation"
 
 export async function POST(request: Request) {
   try {
@@ -22,18 +22,23 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if user already exists
-    const existingUser = userDb.findByEmail(email)
+    try {
+      // Check if user already exists by trying to validate credentials
+      const existingUser = await mysqlAuth.validateCredentials(email, "")
 
-    if (existingUser) {
-      return NextResponse.json({ error: "User already exists" }, { status: 409 })
+      if (existingUser) {
+        return NextResponse.json({ error: "User already exists" }, { status: 409 })
+      }
+    } catch (error) {
+      // If there's an error checking for existing user, continue with registration
+      console.error("Error checking for existing user:", error)
     }
 
     // Hash password
     const hashedPassword = await hashPassword(password)
 
-    // Create user
-    await userDb.create({
+    // Create user in MySQL
+    await mysqlAuth.createUser({
       name,
       email,
       password: hashedPassword,

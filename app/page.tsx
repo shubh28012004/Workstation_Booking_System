@@ -50,7 +50,8 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-500">
-              8 rows × 6 seats (3 left + 3 right). Last row has special reservations for other departments and SCAAI.
+              6 rows × 6 seats (36 total). PC labels start from PC2. Last row has special reservations for other
+              departments and SCAAI.
             </p>
           </CardContent>
           <CardFooter>
@@ -69,7 +70,7 @@ export default function Home() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-500">
-              6 high-performance NVIDIA workstations available for specialized computing tasks and research.
+              3 high-performance workstations (PC1, PC2, PC3) available for specialized computing tasks and research.
             </p>
           </CardContent>
           <CardFooter>
@@ -91,6 +92,7 @@ export default function Home() {
               <li>Bookings longer than 4 days require admin approval</li>
               <li>Reserved seats are not available for general booking</li>
               <li>Cancellations must be made at least 24 hours in advance</li>
+              <li>Only @sitpune.edu.in email addresses are allowed to register</li>
             </ul>
           </CardContent>
           <CardFooter>

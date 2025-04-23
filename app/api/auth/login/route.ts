@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
-import { verifyPassword, generateToken } from "@/lib/auth/auth-utils"
-import { userDb } from "@/lib/db/db-simulation"
+import { verifyPassword } from "@/lib/auth/auth-utils"
+import { mysqlAuth } from "@/lib/db/mysql-simulation"
+import { createSession } from "@/lib/session/session-manager"
 
 export async function POST(request: Request) {
   try {
@@ -11,8 +12,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing email or password" }, { status: 400 })
     }
 
-    // Find user
-    const user = userDb.findByEmail(email)
+    // Special case for admin login
+    if (email === "adminbmd@sitpune.edu.in" && password === "admin123") {
+      // Create admin session
+      const adminUser = {
+        id: "admin-id",
+        name: "Admin User",
+        email: "adminbmd@sitpune.edu.in",
+        role: "admin",
+        phone: "",
+      }
+
+      await createSession(adminUser)
+
+      return NextResponse.json({
+        user: adminUser,
+      })
+    }
+
+    // Find user in MySQL database
+    const user = await mysqlAuth.validateCredentials(email, password)
 
     if (!user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
@@ -25,22 +44,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    // Generate token
-    const token = generateToken({
+    // Create session
+    const sessionUser = {
       id: user.id,
-      email: user.email,
       name: user.name,
+      email: user.email,
       role: user.role,
-    })
+      phone: user.phone || "",
+    }
 
+    await createSession(sessionUser)
+
+    // Return user info
     return NextResponse.json({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: sessionUser,
     })
   } catch (error) {
     console.error("Login error:", error)

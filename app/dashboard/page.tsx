@@ -9,9 +9,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import { Calendar, Clock, MapPin } from "lucide-react"
+import { useUserContext } from "@/context/user-context"
 
 interface Booking {
-  id: string
+  _id: string
+  id?: string
   seatId: string
   pcLabel: string
   floor: number
@@ -23,113 +25,80 @@ interface Booking {
 export default function DashboardPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [user, setUser] = useState<any>(null)
   const router = useRouter()
   const { toast } = useToast()
+  const { user, isLoading } = useUserContext()
 
   useEffect(() => {
     // Check if user is logged in
-    const token = localStorage.getItem("token")
-    const storedUser = localStorage.getItem("user")
-
-    if (token && storedUser) {
-      setIsLoggedIn(true)
-      setUser(JSON.parse(storedUser))
-      fetchBookings()
-    } else {
-      setLoading(false)
+    if (!isLoading) {
+      if (user) {
+        fetchUserBookings()
+      } else {
+        router.push("/auth")
+      }
     }
-  }, [])
+  }, [user, isLoading, router])
 
-  const fetchBookings = async () => {
+  // Fetch bookings for the current user
+  const fetchUserBookings = async () => {
     try {
       setLoading(true)
-      // In a real app, we would fetch from the API
-      // const token = localStorage.getItem('token');
-      // const response = await fetch('/api/bookings', {
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
-      // const data = await response.json();
 
-      // For demo purposes, we'll generate bookings
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Fetch user's bookings from API
+      const response = await fetch("/api/bookings/user", {
+        credentials: "include",
+      })
 
-      const demoBookings: Booking[] = [
-        {
-          id: "1",
-          seatId: "5-2-3",
-          pcLabel: "PC9",
-          floor: 5,
-          startTime: new Date(Date.now() + 86400000).toISOString(), // tomorrow
-          endTime: new Date(Date.now() + 172800000).toISOString(), // day after tomorrow
-          status: "approved",
-        },
-        {
-          id: "2",
-          seatId: "4-1-2",
-          pcLabel: "NVIDIA-2",
-          floor: 4,
-          startTime: new Date(Date.now() + 259200000).toISOString(), // 3 days from now
-          endTime: new Date(Date.now() + 604800000).toISOString(), // 7 days from now
-          status: "pending",
-        },
-        {
-          id: "3",
-          seatId: "5-4-1",
-          pcLabel: "PC19",
-          floor: 5,
-          startTime: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-          endTime: new Date(Date.now() - 86400000).toISOString(), // yesterday
-          status: "completed",
-        },
-      ]
+      if (!response.ok) {
+        throw new Error("Failed to fetch bookings")
+      }
 
-      setBookings(demoBookings)
+      const data = await response.json()
+      setBookings(data)
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to load bookings",
         variant: "destructive",
       })
+      console.error("Error fetching bookings:", error)
     } finally {
       setLoading(false)
     }
   }
 
+  // Cancel a booking
   const cancelBooking = async (bookingId: string) => {
     try {
-      // In a real app, we would call the API
-      // const token = localStorage.getItem('token');
-      // const response = await fetch(`/api/bookings/${bookingId}`, {
-      //   method: 'DELETE',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
+      // Call the API to cancel booking
+      const response = await fetch(`/api/bookings/cancel?id=${bookingId}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
 
-      // if (!response.ok) {
-      //   const data = await response.json();
-      //   throw new Error(data.error || 'Cancellation failed');
-      // }
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Cancellation failed")
+      }
 
-      // For demo purposes, we'll simulate cancellation
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      setBookings(bookings.filter((booking) => booking.id !== bookingId))
+      // Remove the booking from state
+      setBookings(bookings.filter((booking) => (booking._id || booking.id) !== bookingId))
 
       toast({
         title: "Booking cancelled",
         description: "Your booking has been cancelled successfully",
       })
+
+      // Refresh bookings list to ensure UI is updated
+      fetchUserBookings()
     } catch (error) {
       toast({
         title: "Cancellation failed",
         description: error instanceof Error ? error.message : "Something went wrong",
         variant: "destructive",
       })
+      console.error("Cancellation error:", error)
     }
   }
 
@@ -160,7 +129,15 @@ export default function DashboardPage() {
     }
   }
 
-  if (!isLoggedIn) {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <Skeleton className="h-[400px] w-full max-w-3xl rounded-lg" />
+      </div>
+    )
+  }
+
+  if (!user) {
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardHeader>
@@ -232,7 +209,7 @@ export default function DashboardPage() {
                     bookings
                       .filter((b) => b.status === "approved" && new Date(b.startTime) > new Date())
                       .map((booking) => (
-                        <Card key={booking.id}>
+                        <Card key={booking._id || booking.id}>
                           <CardContent className="p-4">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                               <div>
@@ -253,7 +230,7 @@ export default function DashboardPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => cancelBooking(booking.id)}
+                                onClick={() => cancelBooking(booking._id || booking.id || "")}
                                 className="border-red-200 text-red-600 hover:bg-red-50"
                               >
                                 Cancel
@@ -272,7 +249,7 @@ export default function DashboardPage() {
                     bookings
                       .filter((b) => b.status === "pending")
                       .map((booking) => (
-                        <Card key={booking.id}>
+                        <Card key={booking._id || booking.id}>
                           <CardContent className="p-4">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                               <div>
@@ -293,7 +270,7 @@ export default function DashboardPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => cancelBooking(booking.id)}
+                                onClick={() => cancelBooking(booking._id || booking.id || "")}
                                 className="border-red-200 text-red-600 hover:bg-red-50"
                               >
                                 Cancel
@@ -317,7 +294,7 @@ export default function DashboardPage() {
                           b.status === "completed" || (b.status === "approved" && new Date(b.endTime) < new Date()),
                       )
                       .map((booking) => (
-                        <Card key={booking.id}>
+                        <Card key={booking._id || booking.id}>
                           <CardContent className="p-4">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                               <div>
@@ -356,7 +333,10 @@ export default function DashboardPage() {
                             {bookings
                               .filter((b) => b.floor === 5)
                               .map((booking) => (
-                                <div key={booking.id} className="p-2 border rounded flex justify-between items-center">
+                                <div
+                                  key={booking._id || booking.id}
+                                  className="p-2 border rounded flex justify-between items-center"
+                                >
                                   <div>
                                     <div className="font-medium">{booking.pcLabel}</div>
                                     <div className="text-xs text-gray-500">
@@ -383,7 +363,10 @@ export default function DashboardPage() {
                             {bookings
                               .filter((b) => b.floor === 4)
                               .map((booking) => (
-                                <div key={booking.id} className="p-2 border rounded flex justify-between items-center">
+                                <div
+                                  key={booking._id || booking.id}
+                                  className="p-2 border rounded flex justify-between items-center"
+                                >
                                   <div>
                                     <div className="font-medium">{booking.pcLabel}</div>
                                     <div className="text-xs text-gray-500">

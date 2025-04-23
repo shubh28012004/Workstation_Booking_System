@@ -41,36 +41,26 @@ export default function BookingForm({ seatId, floor }: BookingFormProps) {
         throw new Error("Start time cannot be in the past")
       }
 
-      // Get token from localStorage
-      const token = localStorage.getItem("token")
-      if (!token) {
-        router.push("/auth")
-        return
+      // Call the booking API with the exact seatId
+      const response = await fetch("/api/book", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          seatId, // Pass the exact seatId without modification
+          floor,
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Booking failed")
       }
-
-      // In a real app, we would call the API
-      // const response = await fetch('/api/book', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${token}`
-      //   },
-      //   body: JSON.stringify({
-      //     seatId,
-      //     floor,
-      //     startTime: start.toISOString(),
-      //     endTime: end.toISOString()
-      //   })
-      // });
-
-      // const data = await response.json();
-
-      // if (!response.ok) {
-      //   throw new Error(data.error || 'Booking failed');
-      // }
-
-      // For demo purposes, we'll simulate a successful booking
-      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       // Calculate duration in days
       const durationInDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)

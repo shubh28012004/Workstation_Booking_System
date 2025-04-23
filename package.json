@@ -69,7 +69,9 @@
     "mongodb": "latest",
     "pg": "latest",
     "uuid": "latest",
-    "bcryptjs": "latest"
+    "bcryptjs": "latest",
+    "mysql2": "latest",
+    "nodemailer": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
@@ -77,6 +79,10 @@
     "@types/react-dom": "^18.2.10",
     "postcss": "^8",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5"
+    "typescript": "^5",
+    "@types/bcryptjs": "latest",
+    "@types/nodemailer": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest"
   }
 }

@@ -5,8 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation"
 import FloorSelector from "@/components/booking/floor-selector"
 import SeatMap from "@/components/booking/seat-map"
 import BookingForm from "@/components/booking/booking-form"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import SeatNotificationSystem from "@/components/notification/seat-notification"
 
 export default function BookPage() {
   const [selectedFloor, setSelectedFloor] = useState<number | null>(null)
@@ -16,16 +16,21 @@ export default function BookPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem("token")
-    setIsLoggedIn(!!token)
+    // Check if user is logged in via localStorage
+    const storedUser = localStorage.getItem("user")
 
-    // Check if floor is specified in URL
-    const floorParam = searchParams.get("floor")
-    if (floorParam) {
-      setSelectedFloor(Number.parseInt(floorParam))
+    if (!storedUser) {
+      router.push("/auth")
+    } else {
+      setIsLoggedIn(true)
+
+      // Check if floor is specified in URL
+      const floorParam = searchParams.get("floor")
+      if (floorParam) {
+        setSelectedFloor(Number.parseInt(floorParam))
+      }
     }
-  }, [searchParams])
+  }, [searchParams, router])
 
   const handleFloorSelect = (floor: number) => {
     setSelectedFloor(floor)
@@ -38,17 +43,7 @@ export default function BookPage() {
   }
 
   if (!isLoggedIn) {
-    return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle className="text-xl">Login Required</CardTitle>
-          <CardDescription>You need to be logged in to book a workstation</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center">
-          <Button onClick={() => router.push("/auth")}>Go to Login</Button>
-        </CardContent>
-      </Card>
-    )
+    return null
   }
 
   return (
@@ -80,6 +75,8 @@ export default function BookPage() {
           <BookingForm seatId={selectedSeat} floor={selectedFloor} />
         </div>
       )}
+
+      <SeatNotificationSystem />
     </div>
   )
 }

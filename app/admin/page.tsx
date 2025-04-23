@@ -11,7 +11,7 @@ import { Calendar, Clock, Download, FileText, Filter, MapPin, Phone, User } from
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Booking {
-  id: string
+  _id: string
   userId: string
   userName: string
   userEmail: string
@@ -70,81 +70,35 @@ export default function AdminPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true)
-      // In a real app, we would fetch from the API
-      // const token = localStorage.getItem('token');
-      // const response = await fetch('/api/admin/bookings', {
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`
-      //   }
-      // });
-      // const data = await response.json();
 
-      // For demo purposes, we'll generate bookings
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Get token from localStorage
+      const token = localStorage.getItem("token")
+      if (!token) {
+        setLoading(false)
+        return
+      }
 
-      const demoBookings: Booking[] = [
-        {
-          id: "1",
-          userId: "user1",
-          userName: "John Doe",
-          userEmail: "john@sitpune.edu.in",
-          userPhone: "9876543210",
-          seatId: "5-2-3",
-          pcLabel: "PC9",
-          floor: 5,
-          startTime: new Date(Date.now() + 86400000).toISOString(), // tomorrow
-          endTime: new Date(Date.now() + 172800000).toISOString(), // day after tomorrow
-          status: "approved",
+      // Fetch bookings from API
+      const response = await fetch("/api/admin/bookings", {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          id: "2",
-          userId: "user2",
-          userName: "Jane Smith",
-          userEmail: "jane@sitpune.edu.in",
-          userPhone: "9876543211",
-          seatId: "4-1-2",
-          pcLabel: "NVIDIA-2",
-          floor: 4,
-          startTime: new Date(Date.now() + 259200000).toISOString(), // 3 days from now
-          endTime: new Date(Date.now() + 604800000).toISOString(), // 7 days from now
-          status: "pending",
-        },
-        {
-          id: "3",
-          userId: "user3",
-          userName: "Bob Johnson",
-          userEmail: "bob@sitpune.edu.in",
-          userPhone: "9876543212",
-          seatId: "5-4-1",
-          pcLabel: "PC19",
-          floor: 5,
-          startTime: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-          endTime: new Date(Date.now() - 86400000).toISOString(), // yesterday
-          status: "completed",
-        },
-        {
-          id: "4",
-          userId: "user4",
-          userName: "Alice Brown",
-          userEmail: "alice@sitpune.edu.in",
-          userPhone: "9876543213",
-          seatId: "5-1-6",
-          pcLabel: "PC6",
-          floor: 5,
-          startTime: new Date(Date.now() + 345600000).toISOString(), // 4 days from now
-          endTime: new Date(Date.now() + 1209600000).toISOString(), // 14 days from now
-          status: "pending",
-        },
-      ]
+      })
 
-      setBookings(demoBookings)
-      setFilteredBookings(demoBookings)
+      if (!response.ok) {
+        throw new Error("Failed to fetch bookings")
+      }
+
+      const data = await response.json()
+      setBookings(data)
+      setFilteredBookings(data)
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to load bookings",
         variant: "destructive",
       })
+      console.error("Error fetching admin bookings:", error)
     } finally {
       setLoading(false)
     }
@@ -152,28 +106,32 @@ export default function AdminPage() {
 
   const updateBookingStatus = async (bookingId: string, status: "approved" | "rejected") => {
     try {
-      // In a real app, we would call the API
-      // const token = localStorage.getItem('token');
-      // const response = await fetch(`/api/admin/bookings/${bookingId}`, {
-      //   method: 'PATCH',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${token}`
-      //   },
-      //   body: JSON.stringify({ status })
-      // });
+      // Get token from localStorage
+      const token = localStorage.getItem("token")
+      if (!token) {
+        return
+      }
 
-      // if (!response.ok) {
-      //   const data = await response.json();
-      //   throw new Error(data.error || 'Update failed');
-      // }
+      // Call the API to update booking status
+      const response = await fetch("/api/admin/bookings/update", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id: bookingId, status }),
+      })
 
-      // For demo purposes, we'll simulate update
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Update failed")
+      }
 
-      const updatedBookings = bookings.map((booking) => (booking.id === bookingId ? { ...booking, status } : booking))
+      // Update bookings in state
+      const updatedBookings = bookings.map((booking) => (booking._id === bookingId ? { ...booking, status } : booking))
 
       setBookings(updatedBookings)
+      setFilteredBookings(updatedBookings)
 
       toast({
         title: `Booking ${status}`,
@@ -313,7 +271,7 @@ export default function AdminPage() {
                     bookings
                       .filter((b) => b.status === "pending")
                       .map((booking) => (
-                        <Card key={booking.id}>
+                        <Card key={booking._id}>
                           <CardContent className="p-4">
                             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                               <div className="space-y-2">
@@ -343,14 +301,14 @@ export default function AdminPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => updateBookingStatus(booking.id, "rejected")}
+                                  onClick={() => updateBookingStatus(booking._id, "rejected")}
                                   className="border-red-200 text-red-600 hover:bg-red-50"
                                 >
                                   Reject
                                 </Button>
                                 <Button
                                   size="sm"
-                                  onClick={() => updateBookingStatus(booking.id, "approved")}
+                                  onClick={() => updateBookingStatus(booking._id, "approved")}
                                   className="bg-red-600 hover:bg-red-700"
                                 >
                                   Approve
@@ -400,7 +358,7 @@ export default function AdminPage() {
 
                   {filteredBookings.length > 0 ? (
                     filteredBookings.map((booking) => (
-                      <Card key={booking.id}>
+                      <Card key={booking._id}>
                         <CardContent className="p-4">
                           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                             <div className="space-y-2">
@@ -431,14 +389,14 @@ export default function AdminPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => updateBookingStatus(booking.id, "rejected")}
+                                  onClick={() => updateBookingStatus(booking._id, "rejected")}
                                   className="border-red-200 text-red-600 hover:bg-red-50"
                                 >
                                   Reject
                                 </Button>
                                 <Button
                                   size="sm"
-                                  onClick={() => updateBookingStatus(booking.id, "approved")}
+                                  onClick={() => updateBookingStatus(booking._id, "approved")}
                                   className="bg-red-600 hover:bg-red-700"
                                 >
                                   Approve

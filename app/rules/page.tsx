@@ -37,7 +37,8 @@ export default function RulesPage() {
                 <ul className="list-disc pl-5 space-y-1">
                   <li>Standard bookings can be made for up to 4 days</li>
                   <li>Bookings longer than 4 days require admin approval</li>
-                  <li>Cancellations must be made at least 24 hours in advance</li>
+                  <li>Assistance can be done using our 24/7 live chatbot</li>
+                  <li>For any further queries email us on BookMyDeskSIT@gmail.com</li>
                 </ul>
               </div>
 

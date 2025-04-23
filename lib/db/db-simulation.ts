@@ -21,6 +21,7 @@ export async function initializeDatabase() {
         password: adminPassword,
         role: "admin",
         phone: "9876543210",
+        department: "Computer Science",
         created_at: new Date(),
         updated_at: new Date(),
       },
@@ -31,6 +32,7 @@ export async function initializeDatabase() {
         password: userPassword,
         role: "user",
         phone: "9876543211",
+        department: "Information Technology",
         created_at: new Date(),
         updated_at: new Date(),
       },
@@ -39,11 +41,11 @@ export async function initializeDatabase() {
 
   // Create seats if empty
   if (seats.length === 0) {
-    // Generate 5th floor seats with PC labels
-    let pcCounter = 1
-    for (let row = 1; row <= 8; row++) {
+    // Generate 5th floor seats with PC labels - 6 rows starting from PC2
+    let pcCounter = 2
+    for (let row = 1; row <= 6; row++) {
       for (let seatNumber = 1; seatNumber <= 6; seatNumber++) {
-        const isLastRow = row === 8
+        const isLastRow = row === 6
         const isLeftSide = seatNumber <= 3
         const pcLabel = `PC${pcCounter}`
         pcCounter++
@@ -63,14 +65,14 @@ export async function initializeDatabase() {
       }
     }
 
-    // Generate 4th floor seats
-    for (let seatNumber = 1; seatNumber <= 6; seatNumber++) {
+    // Generate 4th floor seats - only 3 PCs
+    for (let seatNumber = 1; seatNumber <= 3; seatNumber++) {
       seats.push({
         id: `4-1-${seatNumber}`,
         floor: 4,
         row: 1,
         seatNumber,
-        pcLabel: `NVIDIA-${seatNumber}`,
+        pcLabel: `PC${seatNumber}`,
         isReserved: false,
       })
     }
@@ -104,7 +106,21 @@ export const userDb = {
       email: user.email,
       role: user.role,
       phone: user.phone,
+      department: user.department,
     }))
+  },
+
+  findById: (id: string) => {
+    return users.find((user) => user.id === id)
+  },
+
+  update: (id: string, data: any) => {
+    const index = users.findIndex((user) => user.id === id)
+    if (index !== -1) {
+      users[index] = { ...users[index], ...data, updated_at: new Date() }
+      return users[index]
+    }
+    return null
   },
 }
 
@@ -134,6 +150,13 @@ export const bookingDb = {
       updatedAt: new Date(),
     }
     bookings.push(newBooking)
+
+    // Simulate MongoDB save
+    console.log("MongoDB: Saving booking to database", newBooking)
+
+    // Simulate email notification
+    simulateEmailNotification(newBooking)
+
     return newBooking
   },
 
@@ -232,4 +255,26 @@ export const getSeatWithBookingInfo = (seatId: string) => {
         ) + " days",
     },
   }
+}
+
+// Simulate email notification
+function simulateEmailNotification(booking: any) {
+  const user = users.find((u) => u.id === booking.userId)
+  const seat = seats.find((s) => s.id === booking.seatId)
+
+  if (!user || !seat) return
+
+  console.log("===== EMAIL NOTIFICATION SIMULATION =====")
+  console.log("From: noreply@sitpune.edu.in")
+  console.log(`To: ${user.email}`)
+  console.log("Subject: Workstation Booking Confirmation")
+  console.log("Body:")
+  console.log(`Dear ${user.name},`)
+  console.log(`Your booking for ${seat.pcLabel} on floor ${booking.floor} has been ${booking.status}.`)
+  console.log(`Booking Details:`)
+  console.log(`- Start Time: ${new Date(booking.startTime).toLocaleString()}`)
+  console.log(`- End Time: ${new Date(booking.endTime).toLocaleString()}`)
+  console.log(`- Status: ${booking.status}`)
+  console.log("Thank you for using BOOK MY DESK!")
+  console.log("===== END EMAIL SIMULATION =====")
 }

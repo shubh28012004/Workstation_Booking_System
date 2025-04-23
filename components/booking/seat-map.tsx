@@ -16,8 +16,8 @@ interface SeatMapProps {
 interface Seat {
   id: string
   floor: number
-  row: number
-  seatNumber: number
+  row: number | null
+  seatNumber: number | null
   pcLabel: string
   isReserved: boolean
   reservedFor?: string
@@ -29,6 +29,19 @@ interface Seat {
   }
 }
 
+interface Booking {
+  _id: string
+  seatId: string
+  userId: string
+  floor: number
+  startTime: string
+  endTime: string
+  status: string
+  userName: string
+  userPhone: string
+  pcLabel: string
+}
+
 export default function SeatMap({ floor, onSeatSelect }: SeatMapProps) {
   const [seats, setSeats] = useState<Seat[]>([])
   const [loading, setLoading] = useState(true)
@@ -37,100 +50,141 @@ export default function SeatMap({ floor, onSeatSelect }: SeatMapProps) {
   const [showSeatDetails, setShowSeatDetails] = useState(false)
   const { toast } = useToast()
 
+  // Generate static seat layout based on floor
+  const generateStaticSeatLayout = (floorNumber: number): Seat[] => {
+    const staticSeats: Seat[] = []
+
+    if (floorNumber === 5) {
+      // 5th floor: 6 rows × 6 seats (PC2 to PC37)
+      let pcCounter = 2 // Start from PC2
+
+      for (let row = 1; row <= 6; row++) {
+        for (let seatNumber = 1; seatNumber <= 6; seatNumber++) {
+          const isLastRow = row === 6
+          const isLeftSide = seatNumber <= 3
+          const pcLabel = `PC${pcCounter}`
+
+          // Last row special reservations
+          const isReserved = isLastRow
+          const reservedFor = isLastRow ? (isLeftSide ? "Other Departments" : "SCAAI") : undefined
+
+          staticSeats.push({
+            id: pcLabel, // Use pcLabel as the ID for consistency
+            floor: 5,
+            row,
+            seatNumber,
+            pcLabel,
+            isReserved: isReserved,
+            reservedFor: reservedFor,
+          })
+
+          pcCounter++
+        }
+      }
+    } else if (floorNumber === 4) {
+      // 4th floor: 3 PCs (PC1, PC2, PC3)
+      for (let seatNumber = 1; seatNumber <= 3; seatNumber++) {
+        const pcLabel = `PC${seatNumber}`
+        staticSeats.push({
+          id: pcLabel, // Use pcLabel as the ID for consistency
+          floor: 4,
+          row: 1,
+          seatNumber,
+          pcLabel,
+          isReserved: false,
+        })
+      }
+    }
+
+    return staticSeats
+  }
+
+  // Fetch all bookings to show global seat status
+  const fetchBookings = async () => {
+    try {
+      const response = await fetch(`/api/bookings?floor=${floor}`, {
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch bookings")
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error("Error fetching bookings:", error)
+      return []
+    }
+  }
+
   useEffect(() => {
-    async function fetchSeats() {
+    async function loadSeatMap() {
       try {
         setLoading(true)
-        // In a real app, we would fetch from the API
-        // const response = await fetch(`/api/seats?floor=${floor}`);
-        // const data = await response.json();
 
-        // For demo purposes, we'll generate seats
-        const generatedSeats: Seat[] = []
+        // Generate static seat layout
+        const staticLayout = generateStaticSeatLayout(floor)
 
-        if (floor === 5) {
-          // 5th floor: 8 rows x 6 seats with PC labels
-          let pcCounter = 1
-          for (let row = 1; row <= 8; row++) {
-            for (let seatNumber = 1; seatNumber <= 6; seatNumber++) {
-              const isLastRow = row === 8
-              const isLeftSide = seatNumber <= 3
-              const pcLabel = `PC${pcCounter}`
-              pcCounter++
+        // Fetch all bookings (not filtered by user)
+        const bookingsData = await fetchBookings()
 
-              // Last row special reservations
-              const isReserved = isLastRow && ((isLeftSide && "Other Departments") || (!isLeftSide && "SCAAI"))
+        // Current date for checking active bookings
+        const now = new Date()
 
-              // Randomly generate booking info for some seats
-              const isBooked = !isReserved && Math.random() > 0.7
-              let booking = undefined
+        // Filter for active and upcoming bookings (both approved and pending)
+        const activeBookings = bookingsData.filter(
+          (booking: Booking) =>
+            (booking.status === "approved" || booking.status === "pending") && new Date(booking.endTime) >= now,
+        )
 
-              if (isBooked) {
-                booking = {
-                  userName: `User ${Math.floor(Math.random() * 100)}`,
-                  userPhone: `98765${Math.floor(Math.random() * 10000)
-                    .toString()
-                    .padStart(5, "0")}`,
-                  duration: `${Math.floor(Math.random() * 4) + 1} days`,
-                }
-              }
+        console.log("Active bookings:", activeBookings)
 
-              generatedSeats.push({
-                id: `5-${row}-${seatNumber}`,
-                floor: 5,
-                row,
-                seatNumber,
-                pcLabel,
-                isReserved: !!isReserved,
-                reservedFor: isReserved ? (isReserved as string) : undefined,
-                isBooked,
-                booking,
-              })
+        // Merge bookings with static layout
+        const seatsWithBookings = staticLayout.map((seat) => {
+          // Find active booking for this seat - match by pcLabel or id
+          const activeBooking = activeBookings.find(
+            (booking: Booking) =>
+              (booking.seatId === seat.id || booking.pcLabel === seat.pcLabel) && new Date(booking.endTime) >= now,
+          )
+
+          if (activeBooking) {
+            console.log(`Seat ${seat.id} is booked by ${activeBooking.userName}`)
+            // Calculate duration in days
+            const startDate = new Date(activeBooking.startTime)
+            const endDate = new Date(activeBooking.endTime)
+            const durationInDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+
+            return {
+              ...seat,
+              isBooked: true,
+              booking: {
+                userName: activeBooking.userName || "Unknown",
+                userPhone: activeBooking.userPhone || "Not provided",
+                duration: `${durationInDays} days`,
+              },
             }
           }
-        } else if (floor === 4) {
-          // 4th floor: 6 NVIDIA seats
-          for (let seatNumber = 1; seatNumber <= 6; seatNumber++) {
-            // Randomly generate booking info for some seats
-            const isBooked = Math.random() > 0.7
-            let booking = undefined
 
-            if (isBooked) {
-              booking = {
-                userName: `User ${Math.floor(Math.random() * 100)}`,
-                userPhone: `98765${Math.floor(Math.random() * 10000)
-                  .toString()
-                  .padStart(5, "0")}`,
-                duration: `${Math.floor(Math.random() * 4) + 1} days`,
-              }
-            }
+          return seat
+        })
 
-            generatedSeats.push({
-              id: `4-1-${seatNumber}`,
-              floor: 4,
-              row: 1,
-              seatNumber,
-              pcLabel: `NVIDIA-${seatNumber}`,
-              isReserved: false,
-              isBooked,
-              booking,
-            })
-          }
-        }
-
-        setSeats(generatedSeats)
+        setSeats(seatsWithBookings)
       } catch (error) {
         toast({
           title: "Error",
-          description: "Failed to load seats",
+          description: "Failed to load seats or bookings",
           variant: "destructive",
         })
+        console.error("Error loading seat map:", error)
+
+        // Even if there's an error, still set the static layout
+        setSeats(generateStaticSeatLayout(floor))
       } finally {
         setLoading(false)
       }
     }
 
-    fetchSeats()
+    loadSeatMap()
   }, [floor, toast])
 
   const handleSeatClick = (seat: Seat) => {
@@ -173,8 +227,8 @@ export default function SeatMap({ floor, onSeatSelect }: SeatMapProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-6 gap-2">
-            {Array.from({ length: floor === 5 ? 48 : 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
+            {Array.from({ length: floor === 5 ? 36 : 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full" />
             ))}
           </div>
         </CardContent>
@@ -188,14 +242,14 @@ export default function SeatMap({ floor, onSeatSelect }: SeatMapProps) {
         <CardHeader>
           <CardTitle className="text-xl">{floor}th Floor Seat Map</CardTitle>
           <CardDescription>
-            {floor === 5 ? "Regular workstation with 48 seats" : "NVIDIA workstation with 6 seats"}
+            {floor === 5 ? "Regular workstation with 36 seats" : "NVIDIA workstation with 3 seats"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {floor === 5 ? (
-            // 5th floor layout: 8 rows x 6 seats
+            // 5th floor layout: 6 rows x 6 seats
             <div className="space-y-4">
-              {Array.from({ length: 8 }).map((_, rowIndex) => {
+              {Array.from({ length: 6 }).map((_, rowIndex) => {
                 const rowNumber = rowIndex + 1
                 const rowSeats = seats.filter((seat) => seat.row === rowNumber)
 
@@ -238,11 +292,11 @@ export default function SeatMap({ floor, onSeatSelect }: SeatMapProps) {
               </div>
             </div>
           ) : (
-            // 4th floor layout: 6 NVIDIA seats
+            // 4th floor layout: 3 PCs
             <div className="space-y-4">
               <div className="flex justify-center space-x-4">
                 <div className="flex-shrink-0 w-8 flex items-center justify-center">NVIDIA</div>
-                <div className="grid grid-cols-6 gap-2 flex-grow">
+                <div className="grid grid-cols-3 gap-4 flex-grow">
                   {seats.map((seat) => (
                     <Button
                       key={seat.id}

@@ -27,3 +27,15 @@ if (process.env.NODE_ENV === "development") {
 }
 
 export default clientPromise
+
+// Helper function to get the database
+export async function getDatabase() {
+  const client = await clientPromise
+  return client.db("workstationDB")
+}
+
+// Helper function to get collections
+export async function getCollection(collectionName: string) {
+  const db = await getDatabase()
+  return db.collection(collectionName)
+}

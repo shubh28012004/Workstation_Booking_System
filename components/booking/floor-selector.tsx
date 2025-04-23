@@ -27,21 +27,25 @@ export default function FloorSelector({ onFloorSelect }: FloorSelectorProps) {
       <CardContent className="grid grid-cols-2 gap-4">
         <Button
           variant={selectedFloor === 4 ? "default" : "outline"}
-          className={`h-24 text-lg ${selectedFloor === 4 ? "bg-red-600 hover:bg-red-700" : "border-red-600 text-red-600 hover:bg-red-50"}`}
+          className={`h-24 text-lg flex flex-col items-center justify-center ${
+            selectedFloor === 4 ? "bg-red-600 hover:bg-red-700" : "border-red-600 text-red-600 hover:bg-red-50"
+          }`}
           onClick={() => handleFloorSelect(4)}
         >
-          4th Floor
-          <span className="block text-xs mt-1">NVIDIA Workstation</span>
-          <span className="block text-xs mt-1">6 Seats</span>
+          <span className="text-base font-medium">4th Floor</span>
+          <span className="block text-xs mt-1 px-1 text-center">NVIDIA Workstation</span>
+          <span className="block text-xs mt-1">3 Seats</span>
         </Button>
         <Button
           variant={selectedFloor === 5 ? "default" : "outline"}
-          className={`h-24 text-lg ${selectedFloor === 5 ? "bg-red-600 hover:bg-red-700" : "border-red-600 text-red-600 hover:bg-red-50"}`}
+          className={`h-24 text-lg flex flex-col items-center justify-center ${
+            selectedFloor === 5 ? "bg-red-600 hover:bg-red-700" : "border-red-600 text-red-600 hover:bg-red-50"
+          }`}
           onClick={() => handleFloorSelect(5)}
         >
-          5th Floor
-          <span className="block text-xs mt-1">Regular Workstation</span>
-          <span className="block text-xs mt-1">48 Seats</span>
+          <span className="text-base font-medium">5th Floor</span>
+          <span className="block text-xs mt-1 px-1 text-center">Regular Workstation</span>
+          <span className="block text-xs mt-1">36 Seats</span>
         </Button>
       </CardContent>
       <CardFooter className="flex justify-center">

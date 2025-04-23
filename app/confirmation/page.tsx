@@ -27,20 +27,6 @@ export default function ConfirmationPage() {
     }
   }, [seatId, floor, start, end, router])
 
-  if (!isLoggedIn) {
-    return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle className="text-xl">Login Required</CardTitle>
-          <CardDescription>You need to be logged in to view booking confirmations</CardDescription>
-        </CardHeader>
-        <CardContent className="flex justify-center">
-          <Button onClick={() => router.push("/auth")}>Go to Login</Button>
-        </CardContent>
-      </Card>
-    )
-  }
-
   if (!seatId || !floor || !start || !end) {
     return null // Will redirect in useEffect
   }
@@ -61,6 +47,9 @@ export default function ConfirmationPage() {
   const endDate = new Date(end)
   const durationInDays = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
   const requiresApproval = durationInDays > 4
+
+  const parsedPcLabel =
+    seatId?.includes("-") && seatId.split("-")[2] ? `PC${seatId.split("-")[2]}` : seatId || "Unknown"
 
   return (
     <div className="flex flex-col items-center justify-center max-w-md mx-auto">
@@ -91,7 +80,7 @@ export default function ConfirmationPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Seat</p>
-              <p>{seatId.split("-")[2]}</p>
+              <p>{parsedPcLabel}</p>
             </div>
           </div>
           <div>

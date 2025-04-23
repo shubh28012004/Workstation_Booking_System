@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { AlertCircle, CheckCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useUserContext } from "@/context/user-context"
 
 export default function AuthForm() {
   const [isLoading, setIsLoading] = useState(false)
@@ -22,6 +23,7 @@ export default function AuthForm() {
   const [registerError, setRegisterError] = useState("")
   const router = useRouter()
   const { toast } = useToast()
+  const { setUser } = useUserContext()
 
   const validateSITEmail = (email: string) => {
     const sitEmailRegex = /^[a-zA-Z0-9._%+-]+@sitpune\.edu\.in$/
@@ -46,10 +48,14 @@ export default function AuthForm() {
       return
     }
 
+    // Check if trying to login as admin with the correct credentials
+    const isAdminLogin = email === "adminbmd@sitpune.edu.in" && password === "admin123"
+
     try {
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Important: include cookies in the request
         body: JSON.stringify({ email, password }),
       })
 
@@ -59,20 +65,22 @@ export default function AuthForm() {
         throw new Error(data.error || "Login failed")
       }
 
-      // Store token in localStorage
-      localStorage.setItem("token", data.token)
+      // Set user in context
+      setUser(data.user)
+
+      // Also store in localStorage for immediate UI response on page loads
       localStorage.setItem("user", JSON.stringify(data.user))
 
       setLoginSuccess(true)
 
       toast({
-        title: "Login successful",
-        description: "Welcome back!",
+        title: isAdminLogin ? "Admin login successful" : "Login successful",
+        description: isAdminLogin ? "Welcome to the admin dashboard!" : "Welcome back!",
       })
 
       // Redirect after a short delay to show success message
       setTimeout(() => {
-        router.push("/dashboard")
+        router.push(isAdminLogin ? "/admin-dashboard" : "/dashboard")
       }, 1500)
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : "Invalid credentials or server error")
